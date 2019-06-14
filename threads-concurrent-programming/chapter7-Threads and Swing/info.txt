@@ -1,0 +1,25 @@
+Threads and Swing
+
+Summary
+The Swing classes comprise one of the largest set of classes in the Java API. While threads are 
+an integral part of Java, the Swing classes themselves are not threadsafe. This places a responsibility 
+on the developer, who must make sure that she follows the appropriate access patterns for Swing classes. 
+Methods on Swing objects (with a few exceptions) can be invoked only on the event-dispatching thread.
+
+Swing's use of the invokeLater() method gives us a hint about how we might handle thread-unsafe libraries 
+in general: as long as access to those libraries occurs only on a single thread, we will not run into any 
+threading problems. Passing a Runnable object to a thread pool that contains a single thread is precisely 
+analogous to the technique used by the Swing classes.
+
+Example Classes
+
+Here are the class names for the examples in this chapter:
+
+Description											Main Java class
+-----------------------------------------------------------------------------------------
+Swing Type Tester (all components threadsafe)		chapter7.examples1.SwingTypeTester
+Swing Type Tester (uses invokeAndWait)				chapter7.example2.SwingTypeTester
+Swing Type Tester with simulated server connection	chapter7.example3.SwingTypeTester
+
+
+

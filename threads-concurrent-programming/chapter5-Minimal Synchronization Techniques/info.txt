@@ -1,0 +1,6 @@
+
+Description													Package
+We use Atomic class to withdraw and deposit in an account.	chapter4.example.account.atomic
+We don't use any synchronized method or atomic class.		chapter4.example.account.notransactional
+We use an synchronized method to withdraw and deposit.		chapter4.example.account.synchronizedmethod
+

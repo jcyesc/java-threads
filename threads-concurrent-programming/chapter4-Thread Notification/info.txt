@@ -1,0 +1,60 @@
+This chapter shows the three different ways of synchronizing and how to use wait(), notify(), notifyAll()
+and the Lock and Condition objets.
+
+	- Synchronized methods
+	- Synchronized blocks
+	- Lock and Condition objets.
+
+
+Here are the class names for the examples in this chapter:
+
+Description 																Main Java class
+
+wait() and notify()	using synchronized methods								chapter4.example0.method.SharedObject
+wait() and notify() using synchronized blocks								chapter4.example0.block.SharedObject
+Lock and Condition objects													chapter4.example0.lock.SharedObject
+Swing Type Tester with wait-and-notify mechanism 							chapter4.example1.SwingTypeTester
+Swing Type Tester with wait-and-notify mechanism in synchronized blocks		chapter4.example2.SwingTypeTester
+Swing Type Tester with condition variables									chapter4.example3.SwingTypeTester
+
+
+
+Thread Notification
+wait( ), notify( ), and the Object Class
+
+Just like the synchronized method, the wait-and-notify mechanism is available from every object in 
+the Java system. However, this mechanism is accomplished by method invocations whereas the synchronized 
+mechanism is handled by adding a keyword.
+
+The wait() and notify() mechanism works because these are methods of the Object class. Since all 
+objects in the Java system inherit directly or indirectly from the Object class, all objects are 
+also instances of the Object class and therefore have support for this mechanism.
+
+
+What is the purpose of the wait-and-notify mechanism, and how does it work? The wait-and-notify mechanism 
+is a synchronization mechanism. However, it is more of a communication mechanism: it allows one thread to 
+communicate to another thread that a particular condition has occurred. The wait-and-notify mechanism does 
+not specify what the specific condition is.
+
+Can the wait-and-notify mechanism be used to replace the synchronized mechanism? Actually, the answer is no; 
+wait-and-notify does not solve the race condition problem that the synchronized mechanism solves. As a 
+matter of fact, wait-and-notify must be used in conjunction with the synchronized lock to prevent a race 
+condition in the wait-and-notify mechanism itself.
+
+
+Does the notifyAll() method really wake up all the threads? Yes and no. All of the waiting threads wake up, 
+but they still have to reacquire the object lock. So the threads do not run in parallel: they must each wait 
+for the object lock to be freed. Thus, only one thread can run at a time, and only after the thread that 
+called the notifyAll() method releases its lock.
+
+Why would you want to wake up all of the threads? There are a few reasons. For example, there might be more 
+than one condition to wait for. Since we cannot control which thread gets the notification, it is entirely 
+possible that a notification wakes up a thread that is waiting for an entirely different condition. By waking 
+up all the threads, we can design the program so that the threads decide among themselves which thread should 
+execute next.
+
+
+
+
+
+

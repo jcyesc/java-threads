@@ -1,0 +1,165 @@
+In this chapter you learn about synchronize method, synchronize blocks and explicit locking.
+
+3.10.1 Example Classes
+Here are the class names and Ant targets for the examples in this chapter: 
+===============================================================================================================
+Description 										Main Java class 						Ant target 
+===============================================================================================================
+Swing Type Tester with ScoreLabel 					chapter3.example1.SwingTypeTester 		ch3-ex1 
+ScoreLabel with explicit lock 						chapter3.example2.SwingTypeTester 		ch3-ex2 
+ScoreLabel with explicit locking at a small scope 	chapter3.example3.SwingTypeTester 		ch3-ex3 
+ScoreLabel with synchronized block locking 			chapter3.example4.SwingTypeTester 		ch3-ex4 
+ScoreLabel with nested locks 						chapter3.example5.SwingTypeTester 		ch3-ex5 
+Deadlocking Animation Canvas 						chapter3.example6.SwingTypeTester 		ch3-ex6 
+Deadlocking Animation Canvas (scope corrected) 		chapter3.example7.SwingTypeTester 		ch3-ex7 
+Deadlocking ScoreLabel 								chapter3.example8.SwingTypeTester 		ch3-ex8 
+Deadlocking ScoreLabel (deadlock corrected) 		chapter3.example9.SwingTypeTester 		ch3-ex9
+
+
+---- SYNCHRONIZATION
+Under the covers, the concept of synchronization is simple: when a method is declared
+synchronized, the thread that wants to execute the method must acquire a token, which we
+call a look. Once the method has acquired (or checked out or grabbed) this lock, it 
+executes the method and releases (or returns) the lock. No matter how the method returns 
+- including via an exception - the lock is release. There is only one lock per object, so 
+if two separate threads try to call synchronized methods of the same object, only one can
+execute the method immediately, the other has to wait until the first thread releases the lock
+before it can execute the method. 
+
+--- Definition: Mutex Lock
+A mutex lock is also known as a mutually exclusive lock. This type of lock is provided by many
+threading systems as a means of synchronization. Only one thread can grab a mutex at a time; if
+two threads try to grab a mutex, only one succeeds. The other thread has to wait until the first 
+thread releases the lock before it can grab the lock and continue operation.
+
+In Java, every object has an associated lock. When a method is declared synchronized, the
+executing thread must grab the lock associated with the object before it can continue. Upon
+completion of the method, the lock is automatically released.
+
+--- Definition: Atomic
+The term atomic is related to the atom, once considered the smaller possible unit of matter,
+unable to be broken into separate parts. When computer code is considered atomic, it cannot
+be interrupted during its execution. This can either be accomplished in hardware or simulated
+software. Generally, atomic instructions are provided in hardware and used to implement atomic
+methods in software.
+
+--- Definition: Scope of a Lock
+The scope of a lock is defined as the period of time between when the lock is grabbed and
+released. In our examples so far, we have used only synchronized methods; this means that
+the scope of these locks is the period of time it takes to execute the methods. This is
+referred to as method scope.
+
+--- volatile and Atomic operations
+Java specifies that basic loading and storing of variables (except for long and double variables)
+is atomic. That means the value of the variable can't be found in an interim state during the 
+store, nor can it be changed in the middle of loading the variable to a register.
+
+Threads are allowed to hold the values of variables in local memory (e.g., in a machine register).
+In that case, when one thread changes the value of the variable, another thread may not see the
+changed variable. This is particularly true in loops that are controlled by a variable (like the
+done flag that we are using to terminate the thread): the looping thread may have already loaded
+the value of the variable into a register and does not necessarily notice when another thread changes
+the variable.
+
+One way to solve this problem is to provide setter and getter methods for the variable. We can then
+simply synchronize access by using the synchronized keyword on these methods. This works because 
+acquiring a synchronization lock means that all temporary values stored in registers are flushed to
+main memory. However, Java provides a more elegant solution: the volatile keyword. If a variable is
+marked as  volatile, every time the variable is used it must be read from main memory. Similarly,
+every time the variable is written, the value must be stored in main memory. Since these operations
+are atomic, we can avoid the race condition.
+
+So why is volatile necessary? Or even useful? Volatile variables solve only the problem introduced by
+Java's memory model. They can be used only when the operations that use the variable are atomic, meaning
+the methods that access the variable must use only a single load or store. If the method has other code, 
+that code may not depend on the variable changing its value during its operation. For example, operations
+like increment and decrement (e.g., ++ and --) can't be used on a volatile variable because these operations
+are syntactic sugar for a load, change, and a store.
+
+How does volatile work with arrays? Declaring an array volatile makes the array reference itself volatile. 
+he elements within the array are not volatile; the virtual machine may still store copies of individual 
+elements in local registers. There is no way to specify that the elements of an array should be treated as 
+volatile. Consequently, if multiple threads are going to access array elements, they must use synchronization 
+in order to protect the data. Atomic variables can also help in this situation. 
+
+
+SYNCHRONIZED AND UNSYNCHRONIZED METHODS
+How does a synchronized method behave in conjunction with an unsynchronized method? To understand this, 
+we must remember that all synchronizing does is to grab an object lock. This, in turn, provides the means 
+of allowing only one synchronized method to run at a time, which in turn provides the data protection that 
+solves the race condition. Simply put, a synchronized method tries to grab the object lock, and an 
+unsynchronized method doesn't. This means that unsynchronized methods can execute at any time, by any 
+thread, regardless of whether a synchronized method is currently running. At any given moment on any given 
+object, any number of unsynchronized methods can be executing, but only one synchronized method can be 
+executing.
+
+What does synchronizing static methods do? And how does it work? Throughout this discussion, we keep 
+talking about "obtaining the object lock." But what about static methods? When a synchronized static 
+method is called, which object are we referring to? A static method does not have a concept of the this 
+reference. It is not possible to obtain the object lock of an object that does not exist. So how does 
+synchronization of static methods work? To answer this question, we will introduce the concept of a class 
+lock. Just as there is an object lock that can be obtained for each instance of a class (i.e., each 
+object), there is a lock that can be obtained for each class. We refer to this as the class lock. In terms 
+of implementation, there is no such thing as a class lock, but it is a useful concept to help us understand 
+how all this works.
+
+When a static synchronized method is called, the program obtains the class lock before calling the method. 
+This mechanism is identical to the case in which the method is not static; it is just a different lock. And 
+this lock is used solely for static methods. Apart from the functional relationship between the two locks, 
+they are not operationally related at all. These are two distinct locks. The class lock can be grabbed and 
+released independently of the object lock. If a nonstatic synchronized method calls a static synchronized 
+method, it acquires both locks.
+
+NESTED LOCKS
+The reason this works is that Java does not blindly grab the lock when it enters synchronized code. 
+If the current thread owns the lock, there is no reason to wait for the lock to be freed or even to 
+grab the lock. Instead, the code in the synchronized section just executes. Furthermore, the system is 
+smart enough to not free the lock if it did not initially grab it upon entering the synchronized section 
+of code. This works because the system keeps track of the number of recursive acquisitions of the lock, 
+finally freeing the lock upon exiting the first method (or block) that acquired the lock. This functionality 
+is called nested locking.
+
+Nested locks are also supported by the ReentrantLock classÑthe class that implements the Lock interface 
+that we have been using so far. If a lock request is made by the thread that currently owns the lock, 
+the ReentrantLock object just increments an internal count of the number of nested lock requests. Calls 
+to the unlock() method decrement the count. The lock is not freed until the lock count reaches zero. 
+This implementation allows these locks to behave exactly like the synchronized keyword. Note, however, 
+that this is a specific property of the ReentrantLock class and not a general property of classes that 
+implement the Lock interface.
+
+Why is Java's support of nested locks important? This was a simple example. A more complexÑand very 
+commonÑexample is that of cross-calling methods. It is possible for a method of one class to call methods 
+of another class, which in turn may call methods of the original class. If Java did not support nested 
+locksÑand the methods of both classes were synchronizedÑwe could deadlock the program.
+
+
+DEADLOCK
+Simplistically, deadlock occurs when two or more threads are waiting for two or more locks to be freed and
+the circunstances in the program are such that the locks are never freed. Interestingly, it is possible to
+deadlock even if no synchronization locks are involved. A deadlock situation involves threads waiting for
+conditions; this includes waiting to acquire a lock and also waiting for variables to be in a particular
+state. On the other hand, it is not possible to deadlock if only one thread is involved, as Java allows
+nested lock acquisition. If a single user thread deadlocks, a system thread must also be involved.
+
+A deadlock can occur even with simple examples. The reason that a deadlock is a problem is obvious- it
+prevents the application from executing correctly. Unfortunately, there is another issue; deadlocks can be
+very difficult to detect, particularly as a program gets more complex.
+
+Can the system somehow resolve this deadlock, just as it is able to avoid the potential deadlock when a 
+thread tries to grab the same lock again? Unfortunately, this problem is different. Unlike the case of the 
+nested locks, where a single thread is trying to grab a single lock multiple times, this case involves two
+separate threads trying to grab two different locks. Since a thread owns one of the locks involved, it may 
+have already made changes that make it impossible for it to free the lock. To be able to fix this problem at 
+the system level, Java would need a system where the first lock can't be grabbed until it is safe from 
+deadlock or provide a way for the deadlock to be resolved once it occurs. Either case is very complex and 
+may be more complex than just having the developer design the program correctly.
+
+In general, deadlocks can be very difficult to resolve. It is possible to have a deadlock that developers 
+can't fix without a complete design overhaul. Given this complexity, it is not possible, or fair, to expect 
+the underlying system to resolve deadlocks automatically. As for the developer, we look at the design issues 
+related to deadlock prevention.
+
+
+
+
+

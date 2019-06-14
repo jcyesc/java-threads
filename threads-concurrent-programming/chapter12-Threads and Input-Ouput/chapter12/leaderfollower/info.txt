@@ -1,0 +1,17 @@
+
+LEADER-FOLLOWER PATTERN
+
+ The design pattern of this example is known as the leader-follower pattern. It relies on the fact
+ that only one thread can execute the accept() method; that is, the internal implementation of the
+ accept() method is synchronized. The thread that obtains that lock can establish the connection with a
+ client and obtain that client's data socket. It can then release the lock, and the next thread in line
+ then obtains the lock and processes the next client. 
+
+chapter12.leaderfollower.TypeServer
+
+This class creates a Server Socket that is listening to the port 4500.
+
+
+chapter12.leaderfollower.TCPClient
+
+This class contains the client for the Server Sockt.
